@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import Head from 'next/head';
 
+// Updated for Vercel deployment compatibility - v2.0
+
 interface Source {
   index: number;
   play: string;
@@ -30,7 +32,7 @@ export default function Home() {
   const [showTragediesOnly, setShowTragediesOnly] = useState(false);
   const [activeTab, setActiveTab] = useState<'short' | 'detailed'>('short');
 
-  const backendUrl = typeof window !== 'undefined' ? (process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000') : 'http://localhost:8000';
+  const backendUrl = 'https://web-production-9f2fc.up.railway.app';
 
   // Shakespeare plays data
   const plays: Play[] = [
