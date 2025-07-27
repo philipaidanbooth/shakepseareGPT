@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ShakespeareGPT - Academic Dictionary Style</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Crimson+Text:ital,wght@0,400;0,600;0,700;1,400&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #E3D9C9;
+        }
+        .serif-font {
+            font-family: 'Crimson Text', serif;
+        }
+        .accent-color {
+            color: #d1555b;
+        }
+        .accent-bg {
+            background-color: #d1555b;
+        }
+        .accent-border {
+            border-color: #d1555b;
+        }
+        .main-bg {
+            background-color: #E3D9C9;
+        }
+        .sidebar-bg {
+            background-color: #f7fafc;
+        }
+        .text-dark {
+            color: #43B3AE;
+        }
+        .text-muted {
+            color: #718096;
+        }
+        .play-item {
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .play-item:hover {
+            background-color: #E3D9C9;
+        }
+        .play-item.active {
+            background-color: #B34348;
+            color: white;
+        }
+        .search-input {
+            background-color: #f7fafc;
+            border: 1px solid #E3D9C9;
+        }
+        .search-input:focus {
+            border-color: #B34348;
+            box-shadow: 0 0 0 3px rgba(179, 67, 72, 0.1);
+        }
+        .tab-button {
+            transition: all 0.2s ease;
+        }
+        .tab-button.active {
+            border-bottom: 2px solid #B34348;
+            color: #B34348;
+        }
+    </style>
+</head>
+<body class="main-bg">
+    <!-- Top Header Bar -->
+    <div class="bg-white border-b border-gray-200 px-6 py-4">
+        <div class="flex items-center justify-center">
+            <div class="serif-font text-3xl font-bold accent-color">
+                Shakespeare-GPT
+            </div>
+        </div>
+    </div>
+
+    <div class="flex h-screen">
+        <!-- Left Sidebar -->
+        <div class="w-80 sidebar-bg border-r border-gray-200 flex flex-col">
+            <!-- Sidebar Header -->
+            <div class="p-4 border-b border-gray-200">
+                <h3 class="font-semibold text-dark mb-2">Shakespeare's Plays</h3>
+                <div class="flex items-center space-x-2">
+                    <span class="text-sm text-muted">Filter:</span>
+                    <label class="relative inline-flex items-center cursor-pointer">
+                        <input type="checkbox" id="filterToggle" class="sr-only peer">
+                        <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-accent-color"></div>
+                        <span class="ml-3 text-sm text-muted">Tragedies</span>
+                    </label>
+                </div>
+            </div>
+
+            <!-- Plays List -->
+            <div class="flex-1 overflow-y-auto">
+                <div id="playsList" class="p-2 space-y-1">
+                    <!-- Plays will be populated here -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Content Area -->
+        <div class="flex-1 flex flex-col">
+            <!-- Info Bar -->
+            <div class="bg-yellow-50 border-b border-yellow-200 px-6 py-3">
+                <div class="flex items-center">
+                    <div class="w-6 h-6 bg-red-500 rounded-full flex items-center justify-center mr-3">
+                        <span class="text-white text-sm font-bold">!</span>
+                    </div>
+                    <span class="text-dark text-sm">
+                        New: Enhanced search with character filtering and scene-specific answers from Shakespeare's complete works.
+                    </span>
+                </div>
+            </div>
+
+            <!-- Main Content -->
+            <div class="flex-1 overflow-y-auto p-6">
+                <!-- Centered Chat Input -->
+                <div class="flex flex-col items-center justify-center min-h-[60vh]">
+                    <div class="w-full max-w-2xl">
+                        <div class="relative">
+                            <input
+                                type="text"
+                                id="searchInput"
+                                placeholder="Ask about Shakespeare's plays, characters, or themes..."
+                                class="w-full px-6 py-4 search-input rounded-xl text-dark placeholder-text-muted focus:outline-none text-lg shadow-lg"
+                            >
+                            <button 
+                                onclick="askQuestion()"
+                                class="absolute right-3 top-1/2 transform -translate-y-1/2 p-2 text-muted hover:text-accent-color transition-colors"
+                            >
+                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Question Display -->
+                <div id="questionDisplay" class="mb-6 hidden">
+                    <div class="flex items-center justify-between">
+                        <h1 id="questionText" class="text-4xl font-bold text-dark serif-font"></h1>
+                        <button class="text-muted hover:text-accent-color">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Answer Section -->
+                <div id="answerSection" class="hidden">
+                    <!-- Short Definition -->
+                    <div class="mb-6">
+                        <h2 class="font-bold text-dark mb-2">Short Answer</h2>
+                        <p id="shortAnswer" class="text-dark"></p>
+                    </div>
+
+                    <!-- Sources -->
+                    <div class="mb-6">
+                        <h2 class="font-bold text-dark mb-2">Sources</h2>
+                        <a id="searchCorpus" href="#" class="text-accent-color underline">Search Shakespeare corpus for this question</a>
+                    </div>
+
+                    <!-- Source Tabs -->
+                    <div class="border-b border-gray-200 mb-6">
+                        <div class="flex space-x-8">
+                            <button class="tab-button active py-2 font-medium text-dark">Primary Sources</button>
+                            <button class="tab-button py-2 font-medium text-muted">Character Analysis</button>
+                            <button class="tab-button py-2 font-medium text-muted">Thematic Context</button>
+                            <button class="tab-button py-2 font-medium text-muted">Historical Notes</button>
+                        </div>
+                    </div>
+
+                    <!-- Detailed Answer -->
+                    <div>
+                        <div id="detailedAnswer" class="text-dark leading-relaxed text-justify"></div>
+                    </div>
+                </div>
+
+                <!-- Loading State -->
+                <div id="loadingState" class="hidden">
+                    <div class="flex items-center justify-center py-12">
+                        <div class="animate-spin rounded-full h-8 w-8 border-b-2 accent-border"></div>
+                        <span class="ml-3 text-muted">Searching Shakespeare's works...</span>
+                    </div>
+                </div>
+
+                <!-- Error State -->
+                <div id="errorState" class="hidden">
+                    <div class="bg-red-50 border border-red-200 rounded-lg p-4">
+                        <div class="flex">
+                            <div class="w-6 h-6 bg-red-500 rounded-full flex items-center justify-center mr-3">
+                                <span class="text-white text-sm font-bold">!</span>
+                            </div>
+                            <span id="errorText" class="text-red-800"></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Shakespeare plays data
+        const plays = [
+            { title: "All's Well That Ends Well", category: "Comedy" },
+            { title: "Antony and Cleopatra", category: "Tragedy" },
+            { title: "As You Like It", category: "Comedy" },
+            { title: "The Comedy of Errors", category: "Comedy" },
+            { title: "Coriolanus", category: "Tragedy" },
+            { title: "Cymbeline", category: "Tragedy" },
+            { title: "Hamlet", category: "Tragedy" },
+            { title: "Henry IV, Part 1", category: "History" },
+            { title: "Henry IV, Part 2", category: "History" },
+            { title: "Henry V", category: "History" },
+            { title: "Henry VI, Part 1", category: "History" },
+            { title: "Henry VI, Part 2", category: "History" },
+            { title: "Henry VI, Part 3", category: "History" },
+            { title: "Henry VIII", category: "History" },
+            { title: "Julius Caesar", category: "Tragedy" },
+            { title: "King John", category: "History" },
+            { title: "King Lear", category: "Tragedy" },
+            { title: "Love's Labour's Lost", category: "Comedy" },
+            { title: "Macbeth", category: "Tragedy" },
+            { title: "Measure for Measure", category: "Comedy" },
+            { title: "The Merchant of Venice", category: "Comedy" },
+            { title: "The Merry Wives of Windsor", category: "Comedy" },
+            { title: "A Midsummer Night's Dream", category: "Comedy" },
+            { title: "Much Ado About Nothing", category: "Comedy" },
+            { title: "Othello", category: "Tragedy" },
+            { title: "Pericles", category: "Tragedy" },
+            { title: "Richard II", category: "History" },
+            { title: "Richard III", category: "History" },
+            { title: "Romeo and Juliet", category: "Tragedy" },
+            { title: "The Taming of the Shrew", category: "Comedy" },
+            { title: "The Tempest", category: "Comedy" },
+            { title: "Timon of Athens", category: "Tragedy" },
+            { title: "Titus Andronicus", category: "Tragedy" },
+            { title: "Troilus and Cressida", category: "Tragedy" },
+            { title: "Twelfth Night", category: "Comedy" },
+            { title: "The Two Gentlemen of Verona", category: "Comedy" },
+            { title: "The Two Noble Kinsmen", category: "Tragedy" },
+            { title: "The Winter's Tale", category: "Comedy" }
+        ];
+
+        // Populate plays list
+        function populatePlays(filterCategory = null) {
+            const playsList = document.getElementById('playsList');
+            playsList.innerHTML = ''; // Clear existing plays
+            
+            const filteredPlays = filterCategory 
+                ? plays.filter(play => play.category === filterCategory)
+                : plays;
+            
+            filteredPlays.forEach(play => {
+                const playDiv = document.createElement('div');
+                playDiv.className = 'play-item px-3 py-2 rounded text-sm text-dark';
+                playDiv.innerHTML = `
+                    <div class="font-medium">${play.title}</div>
+                    <div class="text-xs text-muted">${play.category}</div>
+                `;
+                playDiv.onclick = () => selectPlay(play);
+                playsList.appendChild(playDiv);
+            });
+        }
+
+        let selectedPlay = null;
+
+        function selectPlay(play) {
+            // Remove active class from all plays
+            document.querySelectorAll('.play-item').forEach(item => {
+                item.classList.remove('active');
+            });
+            
+            // Add active class to selected play
+            event.target.closest('.play-item').classList.add('active');
+            
+            // Store selected play for filtering
+            selectedPlay = play;
+            
+            // Update search placeholder
+            document.getElementById('searchInput').placeholder = `Ask about ${play.title}...`;
+        }
+
+        function askQuestion() {
+            const question = document.getElementById('searchInput').value;
+            if (!question.trim()) return;
+
+            // Show loading state
+            showLoading();
+            
+            // Prepare request payload with optional play filter
+            const requestPayload = {
+                question: question,
+                k: 5
+            };
+            
+            // Add play filter if a play is selected
+            if (selectedPlay) {
+                requestPayload.filters = {
+                    play: selectedPlay.title
+                };
+            }
+            
+            // In real implementation, this would be:
+            // axios.post('your-backend-url/answer', requestPayload)
+            
+            // Simulate API call with play filter
+            setTimeout(() => {
+                hideLoading();
+                displayAnswer(question, selectedPlay);
+            }, 2000);
+        }
+
+        function showLoading() {
+            document.getElementById('loadingState').classList.remove('hidden');
+            document.getElementById('answerSection').classList.add('hidden');
+            document.getElementById('errorState').classList.add('hidden');
+        }
+
+        function hideLoading() {
+            document.getElementById('loadingState').classList.add('hidden');
+        }
+
+        function displayAnswer(question, selectedPlay) {
+            // Demo response with play-specific context
+            let shortAnswer, detailedAnswer;
+            
+            if (selectedPlay) {
+                shortAnswer = `Shakespeare's exploration of this theme in ${selectedPlay.title} demonstrates his characteristic depth and complexity within this specific work.`;
+                detailedAnswer = `In ${selectedPlay.title}, Shakespeare's treatment of this subject matter is particularly noteworthy. This ${selectedPlay.category.toLowerCase()} showcases the Bard's mastery of character development and thematic exploration.
+
+The play's unique approach to this theme reveals Shakespeare's understanding of human nature and dramatic structure. Through the lens of ${selectedPlay.title}, we can see how the playwright weaves complex narratives that resonate with audiences across centuries.
+
+The character dynamics and plot developments in this work provide rich material for analysis, demonstrating Shakespeare's ability to create compelling drama that explores universal themes while remaining deeply personal and emotionally resonant.`;
+            } else {
+                shortAnswer = "Shakespeare's exploration of this theme appears across multiple plays, with particular emphasis in the tragedies and comedies.";
+                detailedAnswer = `Shakespeare's treatment of this subject matter demonstrates his characteristic depth and complexity. In the tragedies, we see this theme explored through the lens of human suffering and moral ambiguity, while in the comedies, it often serves as a vehicle for social commentary and romantic resolution.
+
+The most notable examples can be found in Hamlet, where the protagonist's soliloquies reveal deep philosophical contemplation, and in A Midsummer Night's Dream, where the theme is treated with characteristic wit and whimsy. These contrasting approaches highlight Shakespeare's remarkable range as a dramatist.
+
+Further examination of the historical plays reveals how this theme intersects with questions of power, legitimacy, and the nature of kingship. The character development across these works shows Shakespeare's evolving understanding of human psychology and motivation.`;
+            }
+
+            document.getElementById('questionText').textContent = question;
+            document.getElementById('shortAnswer').textContent = shortAnswer;
+            document.getElementById('detailedAnswer').textContent = detailedAnswer;
+            
+            document.getElementById('questionDisplay').classList.remove('hidden');
+            document.getElementById('answerSection').classList.remove('hidden');
+        }
+
+        // Event listeners
+        document.getElementById('searchInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                askQuestion();
+            }
+        });
+
+        // Toggle filter functionality
+        document.getElementById('filterToggle').addEventListener('change', function(e) {
+            if (e.target.checked) {
+                populatePlays('Tragedy');
+            } else {
+                populatePlays(); // Show all plays
+            }
+        });
+
+        // Initialize
+        populatePlays();
+    </script>
+</body>
+</html> 

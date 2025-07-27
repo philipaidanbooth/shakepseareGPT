@@ -1,0 +1,19 @@
+# Core dependencies
+fastapi==0.104.1
+uvicorn[standard]==0.24.0
+pydantic==2.5.0
+
+# Shakespeare GPT dependencies
+chromadb
+openai==1.65.1
+python-dotenv
+
+# Web scraping (for data collection)
+beautifulsoup4
+requests
+html5lib
+
+# Optional: LangChain (if needed)
+langchain
+langchain-openai
+langchain-community
