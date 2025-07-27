@@ -121,51 +121,124 @@ export default function Home() {
         <meta name="description" content="Ask questions about Shakespeare and get contextual answers from his plays" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <link rel="icon" href="/favicon.ico" />
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link href="https://fonts.googleapis.com/css2?family=Crimson+Text:ital,wght@0,400;0,600;0,700;1,400&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+        <script src="https://cdn.tailwindcss.com"></script>
+        <style dangerouslySetInnerHTML={{
+          __html: `
+            body {
+              font-family: 'Inter', sans-serif;
+              background-color: #E3D9C9;
+              margin: 0;
+              padding: 0;
+            }
+            .serif-font {
+              font-family: 'Crimson Text', serif;
+            }
+            .accent-color {
+              color: #B34348;
+            }
+            .accent-bg {
+              background-color: #B34348;
+            }
+            .accent-border {
+              border-color: #B34348;
+            }
+            .main-bg {
+              background-color: #E3D9C9;
+            }
+            .sidebar-bg {
+              background-color: #f7fafc;
+            }
+            .text-dark {
+              color: #43B3AE;
+            }
+            .text-muted {
+              color: #718096;
+            }
+            .play-item {
+              cursor: pointer;
+              transition: all 0.2s ease;
+            }
+            .play-item:hover {
+              background-color: #E3D9C9;
+            }
+            .play-item.active {
+              background-color: #B34348;
+              color: white;
+            }
+            .search-input {
+              background-color: #f7fafc;
+              border: 1px solid #E3D9C9;
+            }
+            .search-input:focus {
+              border-color: #B34348;
+              box-shadow: 0 0 0 3px rgba(179, 67, 72, 0.1);
+            }
+            .tab-button {
+              transition: all 0.2s ease;
+            }
+            .tab-button.active {
+              border-bottom: 2px solid #B34348;
+              color: #B34348;
+            }
+          `
+        }} />
       </Head>
 
-      <main className="min-h-screen" style={{ backgroundColor: '#E3D9C9', fontFamily: 'Inter, sans-serif' }}>
-        <div className="flex h-screen">
+      <main style={{ backgroundColor: '#E3D9C9', fontFamily: 'Inter, sans-serif', minHeight: '100vh' }}>
+        <div style={{ display: 'flex', height: '100vh' }}>
           {/* Sidebar */}
-          <div className="w-80 bg-white shadow-lg overflow-y-auto">
-            <div className="p-6 border-b border-gray-200">
-              <h2 className="text-xl font-semibold" style={{ color: '#43B3AE' }}>SHAKESPEARE GPT</h2>
-              <p className="text-sm text-gray-600 mt-1">Academic Dictionary Style</p>
+          <div style={{ width: '320px', backgroundColor: 'white', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)', overflowY: 'auto' }}>
+            <div style={{ padding: '24px', borderBottom: '1px solid #e2e8f0' }}>
+              <h2 style={{ fontSize: '20px', fontWeight: '600', color: '#43B3AE', margin: 0 }}>SHAKESPEARE GPT</h2>
+              <p style={{ fontSize: '14px', color: '#6b7280', margin: '4px 0 0 0' }}>Academic Dictionary Style</p>
             </div>
 
             {/* Filter Toggle */}
-            <div className="p-4 border-b border-gray-200">
-              <label className="flex items-center space-x-2 cursor-pointer">
+            <div style={{ padding: '16px', borderBottom: '1px solid #e2e8f0' }}>
+              <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
                 <input
                   type="checkbox"
                   checked={showTragediesOnly}
                   onChange={(e) => setShowTragediesOnly(e.target.checked)}
-                  className="rounded"
+                  style={{ borderRadius: '4px' }}
                 />
-                <span className="text-sm" style={{ color: '#43B3AE' }}>Show Tragedies Only</span>
+                <span style={{ fontSize: '14px', color: '#43B3AE' }}>Show Tragedies Only</span>
               </label>
             </div>
 
             {/* Plays List */}
-            <div className="p-4">
-              <h3 className="text-sm font-medium text-gray-700 mb-3">Plays</h3>
-              <div className="space-y-1">
+            <div style={{ padding: '16px' }}>
+              <h3 style={{ fontSize: '14px', fontWeight: '500', color: '#374151', marginBottom: '12px' }}>Plays</h3>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                 {filteredPlays.map((play, index) => (
                   <div
                     key={index}
                     onClick={() => selectPlay(play)}
-                    className={`px-3 py-2 rounded text-sm cursor-pointer transition-all duration-200 ${
-                      selectedPlay?.title === play.title 
-                        ? 'text-white' 
-                        : 'hover:bg-gray-100'
-                    }`}
                     style={{
+                      padding: '8px 12px',
+                      borderRadius: '4px',
+                      fontSize: '14px',
+                      cursor: 'pointer',
+                      transition: 'all 0.2s ease',
                       backgroundColor: selectedPlay?.title === play.title ? '#B34348' : 'transparent',
                       color: selectedPlay?.title === play.title ? 'white' : '#43B3AE'
                     }}
+                    onMouseEnter={(e) => {
+                      if (selectedPlay?.title !== play.title) {
+                        e.currentTarget.style.backgroundColor = '#E3D9C9';
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      if (selectedPlay?.title !== play.title) {
+                        e.currentTarget.style.backgroundColor = 'transparent';
+                      }
+                    }}
                   >
-                    <div className="font-medium">{play.title}</div>
-                    <div className="text-xs text-gray-500">{play.category}</div>
+                    <div style={{ fontWeight: '500' }}>{play.title}</div>
+                    <div style={{ fontSize: '12px', color: selectedPlay?.title === play.title ? 'rgba(255,255,255,0.7)' : '#6b7280' }}>{play.category}</div>
                   </div>
                 ))}
               </div>
@@ -173,25 +246,25 @@ export default function Home() {
           </div>
 
           {/* Main Content */}
-          <div className="flex-1 flex flex-col">
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
             {/* Header */}
-            <div className="p-6 border-b border-gray-200 bg-white">
-              <div className="max-w-4xl mx-auto">
-                <h1 className="text-3xl font-bold" style={{ color: '#43B3AE', fontFamily: "'Crimson Text', serif" }}>
+            <div style={{ padding: '24px', borderBottom: '1px solid #e2e8f0', backgroundColor: 'white' }}>
+              <div style={{ maxWidth: '1024px', margin: '0 auto' }}>
+                <h1 style={{ fontSize: '30px', fontWeight: '700', color: '#43B3AE', margin: 0, fontFamily: 'Crimson Text, serif' }}>
                   Shakespeare GPT
                 </h1>
-                <p className="text-gray-600 mt-1">Ask questions about Shakespeare's works</p>
+                <p style={{ color: '#6b7280', margin: '4px 0 0 0' }}>Ask questions about Shakespeare's works</p>
               </div>
             </div>
 
             {/* Main Content Area */}
-            <div className="flex-1 p-6 overflow-y-auto">
-              <div className="max-w-4xl mx-auto">
+            <div style={{ flex: 1, padding: '24px', overflowY: 'auto' }}>
+              <div style={{ maxWidth: '1024px', margin: '0 auto' }}>
                 {/* Info Bar */}
-                <div className="bg-white rounded-lg p-4 mb-6 shadow-sm">
-                  <div className="flex items-center space-x-2">
-                    <div className="w-2 h-2 rounded-full" style={{ backgroundColor: '#B34348' }}></div>
-                    <span className="text-sm text-gray-600">
+                <div style={{ backgroundColor: 'white', borderRadius: '8px', padding: '16px', marginBottom: '24px', boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1)', border: '1px solid #e5e7eb' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <div style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#B34348' }}></div>
+                    <span style={{ fontSize: '14px', color: '#6b7280' }}>
                       {selectedPlay 
                         ? `Searching within: ${selectedPlay.title} (${selectedPlay.category})`
                         : 'Searching across all Shakespeare plays'
@@ -201,23 +274,47 @@ export default function Home() {
                 </div>
 
                 {/* Search Input - Centered */}
-                <div className="mb-8">
-                  <div className="max-w-2xl mx-auto">
-                    <div className="flex gap-3">
+                <div style={{ marginBottom: '32px' }}>
+                  <div style={{ maxWidth: '512px', margin: '0 auto' }}>
+                    <div style={{ display: 'flex', gap: '12px' }}>
                       <input
                         type="text"
                         value={question}
                         onChange={(e) => setQuestion(e.target.value)}
                         placeholder={selectedPlay ? `Ask about ${selectedPlay.title}...` : "Ask about Shakespeare's plays, characters, or themes..."}
-                        className="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        style={{ backgroundColor: '#f7fafc' }}
+                        style={{
+                          flex: 1,
+                          padding: '12px 16px',
+                          border: '1px solid #d1d5db',
+                          borderRadius: '8px',
+                          fontSize: '16px',
+                          backgroundColor: '#f7fafc',
+                          outline: 'none'
+                        }}
+                        onFocus={(e) => {
+                          e.target.style.borderColor = '#B34348';
+                          e.target.style.boxShadow = '0 0 0 3px rgba(179, 67, 72, 0.1)';
+                        }}
+                        onBlur={(e) => {
+                          e.target.style.borderColor = '#d1d5db';
+                          e.target.style.boxShadow = 'none';
+                        }}
                         onKeyPress={(e) => e.key === 'Enter' && askQuestion()}
                       />
                       <button
                         onClick={askQuestion}
                         disabled={loading || !question.trim()}
-                        className="px-6 py-3 text-white font-semibold rounded-lg transition-colors disabled:opacity-50"
-                        style={{ backgroundColor: '#B34348' }}
+                        style={{
+                          padding: '12px 24px',
+                          color: 'white',
+                          fontWeight: '600',
+                          borderRadius: '8px',
+                          transition: 'all 0.2s ease',
+                          backgroundColor: '#B34348',
+                          border: 'none',
+                          cursor: loading || !question.trim() ? 'not-allowed' : 'pointer',
+                          opacity: loading || !question.trim() ? 0.5 : 1
+                        }}
                       >
                         {loading ? '🤔 Thinking...' : 'Send'}
                       </button>
@@ -227,8 +324,8 @@ export default function Home() {
 
                 {/* Error Message */}
                 {error && (
-                  <div className="max-w-2xl mx-auto mb-6">
-                    <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
+                  <div style={{ maxWidth: '512px', margin: '0 auto 24px auto' }}>
+                    <div style={{ backgroundColor: '#fef2f2', border: '1px solid #fecaca', color: '#dc2626', padding: '12px 16px', borderRadius: '8px' }}>
                       ❌ {error}
                     </div>
                   </div>
@@ -236,36 +333,48 @@ export default function Home() {
 
                 {/* Answer Section */}
                 {answer && (
-                  <div className="max-w-4xl mx-auto">
-                    <div className="bg-white rounded-lg shadow-sm border border-gray-200">
+                  <div style={{ maxWidth: '1024px', margin: '0 auto' }}>
+                    <div style={{ backgroundColor: 'white', borderRadius: '8px', boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1)', border: '1px solid #e5e7eb' }}>
                       {/* Question Display */}
-                      <div className="p-6 border-b border-gray-200">
-                        <h3 className="text-lg font-semibold" style={{ color: '#43B3AE' }}>
+                      <div style={{ padding: '24px', borderBottom: '1px solid #e5e7eb' }}>
+                        <h3 style={{ fontSize: '18px', fontWeight: '600', color: '#43B3AE', margin: '0 0 8px 0' }}>
                           Question
                         </h3>
-                        <p className="text-gray-700 mt-2">{question}</p>
+                        <p style={{ color: '#374151', margin: 0 }}>{question}</p>
                       </div>
 
                       {/* Answer Tabs */}
-                      <div className="border-b border-gray-200">
-                        <div className="flex">
+                      <div style={{ borderBottom: '1px solid #e5e7eb' }}>
+                        <div style={{ display: 'flex' }}>
                           <button
                             onClick={() => setActiveTab('short')}
-                            className={`px-6 py-3 text-sm font-medium border-b-2 transition-colors ${
-                              activeTab === 'short' 
-                                ? 'border-blue-500 text-blue-600' 
-                                : 'border-transparent text-gray-500 hover:text-gray-700'
-                            }`}
+                            style={{
+                              padding: '12px 24px',
+                              fontSize: '14px',
+                              fontWeight: '500',
+                              borderBottom: `2px solid ${activeTab === 'short' ? '#3b82f6' : 'transparent'}`,
+                              color: activeTab === 'short' ? '#2563eb' : '#6b7280',
+                              backgroundColor: 'transparent',
+                              border: 'none',
+                              cursor: 'pointer',
+                              transition: 'all 0.2s ease'
+                            }}
                           >
                             Short Answer
                           </button>
                           <button
                             onClick={() => setActiveTab('detailed')}
-                            className={`px-6 py-3 text-sm font-medium border-b-2 transition-colors ${
-                              activeTab === 'detailed' 
-                                ? 'border-blue-500 text-blue-600' 
-                                : 'border-transparent text-gray-500 hover:text-gray-700'
-                            }`}
+                            style={{
+                              padding: '12px 24px',
+                              fontSize: '14px',
+                              fontWeight: '500',
+                              borderBottom: `2px solid ${activeTab === 'detailed' ? '#3b82f6' : 'transparent'}`,
+                              color: activeTab === 'detailed' ? '#2563eb' : '#6b7280',
+                              backgroundColor: 'transparent',
+                              border: 'none',
+                              cursor: 'pointer',
+                              transition: 'all 0.2s ease'
+                            }}
                           >
                             Detailed Answer
                           </button>
@@ -273,8 +382,8 @@ export default function Home() {
                       </div>
 
                       {/* Answer Content */}
-                      <div className="p-6">
-                        <div className="text-gray-700 leading-relaxed whitespace-pre-wrap">
+                      <div style={{ padding: '24px' }}>
+                        <div style={{ color: '#374151', lineHeight: '1.6', whiteSpace: 'pre-wrap' }}>
                           {activeTab === 'short' ? (
                             <div>
                               {selectedPlay 
@@ -306,24 +415,24 @@ Further examination of the historical plays reveals how this theme intersects wi
 
                 {/* Sources */}
                 {sources.length > 0 && (
-                  <div className="max-w-4xl mx-auto mt-6">
-                    <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-                      <h3 className="text-lg font-semibold mb-4" style={{ color: '#43B3AE' }}>
+                  <div style={{ maxWidth: '1024px', margin: '24px auto 0 auto' }}>
+                    <div style={{ backgroundColor: 'white', borderRadius: '8px', boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1)', border: '1px solid #e5e7eb', padding: '24px' }}>
+                      <h3 style={{ fontSize: '18px', fontWeight: '600', color: '#43B3AE', margin: '0 0 16px 0' }}>
                         📚 Sources
                       </h3>
-                      <div className="space-y-3">
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                         {sources.map((source, index) => (
-                          <div key={index} className="bg-gray-50 rounded-lg p-4 border border-gray-200">
-                            <div className="flex justify-between items-start">
+                          <div key={index} style={{ backgroundColor: '#f9fafb', borderRadius: '8px', padding: '16px', border: '1px solid #e5e7eb' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                               <div>
-                                <h4 className="font-semibold text-gray-800">
+                                <h4 style={{ fontWeight: '600', color: '#1f2937', margin: '0 0 4px 0' }}>
                                   {source.play} - {source.act}
                                 </h4>
-                                <p className="text-gray-600 text-sm mt-1">
+                                <p style={{ color: '#6b7280', fontSize: '14px', margin: 0 }}>
                                   {source.scene_title}
                                 </p>
                               </div>
-                              <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">
+                              <span style={{ fontSize: '12px', backgroundColor: '#dbeafe', color: '#1e40af', padding: '4px 8px', borderRadius: '4px' }}>
                                 {source.similarity}
                               </span>
                             </div>
@@ -337,8 +446,6 @@ Further examination of the historical plays reveals how this theme intersects wi
             </div>
           </div>
         </div>
-
-
       </main>
     </>
   );
