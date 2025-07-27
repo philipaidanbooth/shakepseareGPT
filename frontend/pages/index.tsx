@@ -193,11 +193,6 @@ export default function Home() {
         <div style={{ display: 'flex', height: '100vh' }}>
           {/* Sidebar */}
           <div style={{ width: '320px', backgroundColor: 'white', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)', overflowY: 'auto' }}>
-            <div style={{ padding: '24px', borderBottom: '1px solid #e2e8f0' }}>
-              <h2 style={{ fontSize: '20px', fontWeight: '600', color: '#43B3AE', margin: 0 }}>SHAKESPEARE GPT</h2>
-              <p style={{ fontSize: '14px', color: '#6b7280', margin: '4px 0 0 0' }}>Academic Dictionary Style</p>
-            </div>
-
             {/* Filter Toggle */}
             <div style={{ padding: '16px', borderBottom: '1px solid #e2e8f0' }}>
               <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
@@ -210,6 +205,35 @@ export default function Home() {
                 <span style={{ fontSize: '14px', color: '#43B3AE' }}>Show Tragedies Only</span>
               </label>
             </div>
+
+            {/* Selected Play Display */}
+            {selectedPlay && (
+              <div style={{ padding: '16px', borderBottom: '1px solid #e2e8f0', backgroundColor: '#f8f9fa' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div>
+                    <div style={{ fontSize: '14px', fontWeight: '600', color: '#43B3AE' }}>Selected Play:</div>
+                    <div style={{ fontSize: '12px', color: '#6b7280' }}>{selectedPlay.title}</div>
+                  </div>
+                  <button
+                    onClick={() => setSelectedPlay(null)}
+                    style={{
+                      padding: '4px 8px',
+                      fontSize: '12px',
+                      backgroundColor: '#B34348',
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: '4px',
+                      cursor: 'pointer',
+                      transition: 'all 0.2s ease'
+                    }}
+                    onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#a03a3f'}
+                    onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#B34348'}
+                  >
+                    Deselect
+                  </button>
+                </div>
+              </div>
+            )}
 
             {/* Plays List */}
             <div style={{ padding: '16px' }}>
@@ -264,14 +288,41 @@ export default function Home() {
               <div style={{ maxWidth: '1024px', margin: '0 auto' }}>
                 {/* Info Bar */}
                 <div style={{ backgroundColor: 'white', borderRadius: '8px', padding: '16px', marginBottom: '24px', boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1)', border: '1px solid #e5e7eb' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <div style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#B34348' }}></div>
-                    <span style={{ fontSize: '14px', color: '#6b7280' }}>
-                      {selectedPlay 
-                        ? `Searching within: ${selectedPlay.title} (${selectedPlay.category})`
-                        : 'Searching across all Shakespeare plays'
-                      }
-                    </span>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <div style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#B34348' }}></div>
+                      <span style={{ fontSize: '14px', color: '#6b7280' }}>
+                        {selectedPlay 
+                          ? `Searching within: ${selectedPlay.title} (${selectedPlay.category})`
+                          : 'Searching across all Shakespeare plays'
+                        }
+                      </span>
+                    </div>
+                    {selectedPlay && (
+                      <button
+                        onClick={() => setSelectedPlay(null)}
+                        style={{
+                          padding: '4px 8px',
+                          fontSize: '12px',
+                          backgroundColor: 'transparent',
+                          color: '#B34348',
+                          border: '1px solid #B34348',
+                          borderRadius: '4px',
+                          cursor: 'pointer',
+                          transition: 'all 0.2s ease'
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.backgroundColor = '#B34348';
+                          e.currentTarget.style.color = 'white';
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.backgroundColor = 'transparent';
+                          e.currentTarget.style.color = '#B34348';
+                        }}
+                      >
+                        Clear Filter
+                      </button>
+                    )}
                   </div>
                 </div>
 
@@ -345,70 +396,12 @@ export default function Home() {
                         <p style={{ color: '#374151', margin: 0 }}>{question}</p>
                       </div>
 
-                      {/* Answer Tabs */}
-                      <div style={{ borderBottom: '1px solid #e5e7eb' }}>
-                        <div style={{ display: 'flex' }}>
-                          <button
-                            onClick={() => setActiveTab('short')}
-                            style={{
-                              padding: '12px 24px',
-                              fontSize: '14px',
-                              fontWeight: '500',
-                              borderBottom: `2px solid ${activeTab === 'short' ? '#3b82f6' : 'transparent'}`,
-                              color: activeTab === 'short' ? '#2563eb' : '#6b7280',
-                              backgroundColor: 'transparent',
-                              border: 'none',
-                              cursor: 'pointer',
-                              transition: 'all 0.2s ease'
-                            }}
-                          >
-                            Short Answer
-                          </button>
-                          <button
-                            onClick={() => setActiveTab('detailed')}
-                            style={{
-                              padding: '12px 24px',
-                              fontSize: '14px',
-                              fontWeight: '500',
-                              borderBottom: `2px solid ${activeTab === 'detailed' ? '#3b82f6' : 'transparent'}`,
-                              color: activeTab === 'detailed' ? '#2563eb' : '#6b7280',
-                              backgroundColor: 'transparent',
-                              border: 'none',
-                              cursor: 'pointer',
-                              transition: 'all 0.2s ease'
-                            }}
-                          >
-                            Detailed Answer
-                          </button>
-                        </div>
-                      </div>
+
 
                       {/* Answer Content */}
                       <div style={{ padding: '24px' }}>
                         <div style={{ color: '#374151', lineHeight: '1.6', whiteSpace: 'pre-wrap' }}>
-                          {activeTab === 'short' ? (
-                            <div>
-                              {selectedPlay 
-                                ? `Shakespeare's exploration of this theme in ${selectedPlay.title} demonstrates his characteristic depth and complexity within this specific work.`
-                                : "Shakespeare's exploration of this theme appears across multiple plays, with particular emphasis in the tragedies and comedies."
-                              }
-                            </div>
-                          ) : (
-                            <div>
-                              {selectedPlay 
-                                ? `In ${selectedPlay.title}, Shakespeare's treatment of this subject matter is particularly noteworthy. This ${selectedPlay.category.toLowerCase()} showcases the Bard's mastery of character development and thematic exploration.
-
-The play's unique approach to this theme reveals Shakespeare's understanding of human nature and dramatic structure. Through the lens of ${selectedPlay.title}, we can see how the playwright weaves complex narratives that resonate with audiences across centuries.
-
-The character dynamics and plot developments in this work provide rich material for analysis, demonstrating Shakespeare's ability to create compelling drama that explores universal themes while remaining deeply personal and emotionally resonant.`
-                                : `Shakespeare's treatment of this subject matter demonstrates his characteristic depth and complexity. In the tragedies, we see this theme explored through the lens of human suffering and moral ambiguity, while in the comedies, it often serves as a vehicle for social commentary and romantic resolution.
-
-The most notable examples can be found in Hamlet, where the protagonist's soliloquies reveal deep philosophical contemplation, and in A Midsummer Night's Dream, where the theme is treated with characteristic wit and whimsy. These contrasting approaches highlight Shakespeare's remarkable range as a dramatist.
-
-Further examination of the historical plays reveals how this theme intersects with questions of power, legitimacy, and the nature of kingship. The character development across these works shows Shakespeare's evolving understanding of human psychology and motivation.`
-                              }
-                            </div>
-                          )}
+                          {answer}
                         </div>
                       </div>
                     </div>
