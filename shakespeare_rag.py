@@ -84,7 +84,11 @@ def search_shakespeare(query, k=10, filters=None):
             for key, value in filters.items():
                 if key in ['play', 'act', 'scene_number', 'characters']:
                     where_conditions.append({key: {"$eq": value}})
-            if where_conditions:
+            
+            # Handle single vs multiple conditions
+            if len(where_conditions) == 1:
+                where_clause = where_conditions[0]
+            elif len(where_conditions) > 1:
                 where_clause = {"$and": where_conditions}
         
         # Search the collection
@@ -165,125 +169,6 @@ def list_available_characters():
 
 # ------------------------------------------------------------
 
-def extract_quotes_from_text(text, min_length=10):
-    """
-    Extract potential quotes from text by looking for dialogue patterns.
-    
-    Args:
-        text (str): The text to extract quotes from
-        min_length (int): Minimum length for a quote to be considered
-    
-    Returns:
-        list: List of potential quotes
-    """
-    quotes = []
-    
-    # Split by lines and look for dialogue patterns
-    lines = text.split('\n')
-    current_quote = ""
-    
-    for line in lines:
-        line = line.strip()
-        
-        # Look for character names followed by dialogue (common Shakespeare format)
-        if ':' in line and len(line.split(':')[0].strip()) < 20:  # Character name likely
-            parts = line.split(':', 1)
-            if len(parts) == 2:
-                dialogue = parts[1].strip()
-                if len(dialogue) >= min_length:
-                    quotes.append(dialogue)
-        
-        # Look for lines that start with capital letters and seem like dialogue
-        elif line and line[0].isupper() and len(line) >= min_length:
-            # Check if it looks like dialogue (not stage directions)
-            if not any(word in line.upper() for word in ['ENTER', 'EXIT', 'SCENE', 'ACT', 'STAGE']):
-                quotes.append(line)
-    
-    return quotes
-
-def get_quotes_from_chunks(question, k=5, filters=None, max_quotes_per_chunk=3):
-    """
-    Get specific quotes from relevant Shakespeare chunks.
-    
-    Args:
-        question (str): The search query
-        k (int): Number of relevant chunks to retrieve
-        filters (dict): Optional filters like {"play": "Hamlet"}
-        max_quotes_per_chunk (int): Maximum quotes to extract per chunk
-    
-    Returns:
-        dict: Dictionary with quotes organized by source
-    """
-    # Step 1: Retrieve relevant Shakespeare chunks
-    print("🔍 Searching Shakespeare database for quotes...")
-    if filters:
-        print(f"🔍 Applying filters: {filters}")
-    results = search_shakespeare(question, k=k, filters=filters)
-    
-    if not results:
-        return {"error": "I couldn't find relevant Shakespeare content."}
-    
-    # Step 2: Extract quotes from each chunk
-    quotes_by_source = {}
-    
-    for i, result in enumerate(results, 1):
-        metadata = result['metadata']
-        content = result['content']
-        similarity = 1 - result['distance']
-        
-        # Extract quotes from this chunk
-        quotes = extract_quotes_from_text(content)
-        
-        # Limit quotes per chunk
-        quotes = quotes[:max_quotes_per_chunk]
-        
-        source_info = {
-            'play': metadata['play'],
-            'act': metadata['act'],
-            'scene_title': metadata['scene_title'],
-            'characters': metadata['characters'],
-            'similarity': similarity,
-            'quotes': quotes
-        }
-        
-        quotes_by_source[f"Source {i}"] = source_info
-    
-    return quotes_by_source
-
-def format_quotes_response(quotes_by_source):
-    """
-    Format the quotes response for display.
-    
-    Args:
-        quotes_by_source (dict): Quotes organized by source
-    
-    Returns:
-        str: Formatted response with quotes
-    """
-    if "error" in quotes_by_source:
-        return quotes_by_source["error"]
-    
-    response = "📚 Relevant Shakespeare Quotes:\n\n"
-    
-    for source_name, source_info in quotes_by_source.items():
-        response += f"🎭 {source_name}\n"
-        response += f"📖 Play: {source_info['play']}\n"
-        response += f"🎪 Act: {source_info['act']}\n"
-        response += f"🎬 Scene: {source_info['scene_title']}\n"
-        response += f"👥 Characters: {source_info['characters']}\n"
-        response += f"📊 Relevance: {source_info['similarity']:.3f}\n\n"
-        
-        if source_info['quotes']:
-            response += "💬 Quotes:\n"
-            for j, quote in enumerate(source_info['quotes'], 1):
-                response += f"   {j}. \"{quote}\"\n"
-        else:
-            response += "💬 No specific quotes found in this chunk.\n"
-        
-        response += "\n" + "-" * 60 + "\n\n"
-    
-    return response
-
 def answer_with_shakespeare_context(question, k=3, filters=None):
     """
     Answer a question using Shakespeare context with optional filters.
@@ -306,45 +191,26 @@ def answer_with_shakespeare_context(question, k=3, filters=None):
     if not results:
         return "I couldn't find relevant Shakespeare content to answer your question."
     
-    # Step 2: Extract quotes from chunks for more precise responses
-    quotes_by_source = {}
+    # Step 2: Build context from retrieved chunks
+    context_parts = []
     for i, result in enumerate(results, 1):
         metadata = result['metadata']
         content = result['content']
         similarity = 1 - result['distance']
         
-        # Extract quotes from this chunk
-        quotes = extract_quotes_from_text(content)
-        
-        source_info = {
-            'play': metadata['play'],
-            'act': metadata['act'],
-            'scene_title': metadata['scene_title'],
-            'characters': metadata['characters'],
-            'similarity': similarity,
-            'quotes': quotes,
-            'full_content': content
-        }
-        
-        quotes_by_source[f"Source {i}"] = source_info
-    
-    # Step 3: Build context with specific quotes
-    context_parts = []
-    for source_name, source_info in quotes_by_source.items():
         context_parts.append(f"""
---- {source_name} ---
-Play: {source_info['play']}
-Act: {source_info['act']}
-Scene: {source_info['scene_title']}
-Characters: {source_info['characters']}
-Relevance: {source_info['similarity']:.3f}
-Key Quotes: {chr(10).join([f'"{quote}"' for quote in source_info['quotes'][:3]])}
-Full Content: {source_info['full_content']}
+--- Source {i} ---
+Play: {metadata['play']}
+Act: {metadata['act']}
+Scene: {metadata['scene_title']}
+Characters: {metadata['characters']}
+Relevance: {similarity:.3f}
+Content: {content}
 """)
     
     context = "\n".join(context_parts)
     
-    # Step 4: Create prompt that models GPT-4o's style
+    # Step 3: Create prompt that models GPT-4o's style
     prompt = f"""You are a Shakespeare scholar providing detailed, analytical responses in the style of GPT-4o. When answering questions about Shakespeare's works, follow this approach:
 
 1. **Provide Context**: Set the scene and explain the dramatic situation
@@ -367,7 +233,7 @@ Please provide a thoughtful, well-structured response that:
 
 RESPONSE:"""
 
-    # Step 5: Generate answer using OpenAI
+    # Step 4: Generate answer using OpenAI
     try:
         response = openai_client.chat.completions.create(
             model="gpt-4o",
@@ -381,7 +247,7 @@ RESPONSE:"""
         
         answer = response.choices[0].message.content
         
-        # Step 6: Add source information
+        # Step 5: Add source information
         sources_info = "\n\n📚 Sources:\n"
         for i, result in enumerate(results, 1):
             metadata = result['metadata']
@@ -482,9 +348,17 @@ def interactive_quotes_mode():
         
         # Get quotes
         print("\n🔍 Searching for quotes...")
-        quotes_result = get_quotes_from_chunks(user_input, k=5, filters=current_filters)
-        formatted_response = format_quotes_response(quotes_result)
-        print(f"\n{formatted_response}")
+        results = search_shakespeare(user_input, k=5, filters=current_filters)
+        if not results:
+            print("No quotes found for the given query.")
+        else:
+            print("💬 Quotes:")
+            for i, result in enumerate(results, 1):
+                metadata = result['metadata']
+                content = result['content']
+                similarity = 1 - result['distance']
+                print(f"  {i}. Play: {metadata['play']}, Act: {metadata['act']}, Scene: {metadata['scene_title']}, Relevance: {similarity:.3f}")
+                print(f"     Content: {content}\n")
         print("="*80 + "\n")
 
 # Example usage
@@ -517,9 +391,19 @@ if __name__ == "__main__":
     
     for question in test_quote_questions:
         print(f"\n🔍 Question: {question}")
-        quotes_result = get_quotes_from_chunks(question, k=3)
-        formatted_response = format_quotes_response(quotes_result)
-        print(f"{formatted_response}")
+        # The get_quotes_from_chunks function is removed, so this will now just search
+        # and print the raw results.
+        results = search_shakespeare(question, k=3)
+        if not results:
+            print("No quotes found for this question.")
+        else:
+            print("💬 Quotes:")
+            for i, result in enumerate(results, 1):
+                metadata = result['metadata']
+                content = result['content']
+                similarity = 1 - result['distance']
+                print(f"  {i}. Play: {metadata['play']}, Act: {metadata['act']}, Scene: {metadata['scene_title']}, Relevance: {similarity:.3f}")
+                print(f"     Content: {content}\n")
         print("-" * 80)
     
     # ------------------------------------------------------------
