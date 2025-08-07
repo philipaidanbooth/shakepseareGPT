@@ -91,7 +91,11 @@ def search_shakespeare(query: str, k: int = 10, filters: Optional[Dict] = None):
             for key, value in filters.items():
                 if key in ['play', 'act', 'scene_number', 'characters']:
                     where_conditions.append({key: {"$eq": value}})
-            if where_conditions:
+            
+            # Handle single vs multiple conditions
+            if len(where_conditions) == 1:
+                where_clause = where_conditions[0]
+            elif len(where_conditions) > 1:
                 where_clause = {"$and": where_conditions}
         
         # Search the collection
@@ -120,7 +124,8 @@ def search_shakespeare(query: str, k: int = 10, filters: Optional[Dict] = None):
         raise HTTPException(status_code=500, detail=f"Search error: {str(e)}")
 
 def answer_with_shakespeare_context(question: str, k: int = 3, filters: Optional[Dict] = None):
-    """Answer a question using Shakespeare context with optional filters."""
+    """Answer a question using Shakespeare context with optional filters.
+    Models GPT-4o's style with specific quotes, context, and analysis."""
     try:
         # Validate inputs
         if not question or not question.strip():
@@ -142,41 +147,53 @@ def answer_with_shakespeare_context(question: str, k: int = 3, filters: Optional
         context_parts = []
         for i, result in enumerate(results, 1):
             metadata = result['metadata']
+            content = result['content']
+            similarity = 1 - result['distance']
+            
             context_parts.append(f"""
 --- Source {i} ---
 Play: {metadata['play']}
 Act: {metadata['act']}
 Scene: {metadata['scene_title']}
 Characters: {metadata['characters']}
-Content: {result['content']}
+Relevance: {similarity:.3f}
+Content: {content}
 """)
         
         context = "\n".join(context_parts)
         
-        # Step 3: Create prompt with context
-        prompt = f"""You are a well-read, insightful Shakespeare guide—a scholar and storyteller who can explain the Bard's works to students, readers, and performers alike.
+        # Step 3: Create prompt that models GPT-4o's style
+        prompt = f"""You are a Shakespeare scholar providing detailed, analytical responses in the style of GPT-4o. When answering questions about Shakespeare's works, follow this approach:
 
-            Below is a passage or excerpt from Shakespeare. Use it to thoughtfully respond to the user's question.
+1. **Provide Context**: Set the scene and explain the dramatic situation
+2. **Quote Specifically**: Include exact quotes from the text with proper attribution
+3. **Analyze the Moment**: Explain the significance and what it reveals about characters/themes
+4. **Connect to Broader Themes**: Show how this moment fits into the larger play
+5. **Use Clear Structure**: Organize your response with clear paragraphs and transitions
 
-            CONTEXT:
-            {context}
+CONTEXT FROM SHAKESPEARE'S WORKS:
+{context}
 
-            QUESTION:
-            {question}
+QUESTION: {question}
 
-            Please provide a thoughtful, well-supported response based on the context above. Feel free to cite specific characters, scenes, or quotes when relevant. If the passage doesn't fully answer the question, acknowledge that and share whatever insight you can based on the given lines. Aim for clarity, depth, and a touch of literary flair where appropriate.
+Please provide a thoughtful, well-structured response that:
+- Identifies the specific moment/scene being asked about
+- Includes relevant quotes with proper attribution (Act, Scene)
+- Explains the dramatic context and significance
+- Analyzes what this reveals about the character(s) and themes
+- Uses a scholarly but accessible tone similar to GPT-4o
 
-            RESPONSE:"""
+RESPONSE:"""
 
         # Step 4: Generate answer using OpenAI
         print("🤖 Generating answer with OpenAI...")
         response = openai_client.chat.completions.create(
-            model="gpt-3.5-turbo",
+            model="gpt-4o",
             messages=[
-                {"role": "system", "content": "You are a thoughtful, insightful guide to Shakespeare's works—combining deep literary knowledge with clear, approachable explanations. You help students, scholars, and theater-lovers understand scenes, characters, and themes based on the provided context. If the passage is unclear or insufficient, you explain what can and can't be answered."},
+                {"role": "system", "content": "You are a Shakespeare scholar providing detailed, analytical responses. When quoting Shakespeare, always include the Act and Scene. Structure your responses with clear context, specific quotes, and thoughtful analysis. Aim for the depth and clarity of GPT-4o's responses."},
                 {"role": "user", "content": prompt}
             ],
-            max_tokens=1000,
+            max_tokens=1500,
             temperature=0.7
         )
         
