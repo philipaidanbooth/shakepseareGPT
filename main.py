@@ -171,6 +171,12 @@ Content: {content}
 4. **Connect to Broader Themes**: Show how this moment fits into the larger play
 5. **Use Clear Structure**: Organize your response with clear paragraphs and transitions
 
+Use markdown formatting for better readability:
+- Use **bold** for emphasis and section headers
+- Use *italic* for character names and play titles
+- Structure your response with clear sections
+- Format quotes with proper attribution
+
 CONTEXT FROM SHAKESPEARE'S WORKS:
 {context}
 
@@ -182,6 +188,7 @@ Please provide a thoughtful, well-structured response that:
 - Explains the dramatic context and significance
 - Analyzes what this reveals about the character(s) and themes
 - Uses a scholarly but accessible tone similar to GPT-4o
+- Uses markdown formatting for better structure
 
 RESPONSE:"""
 
