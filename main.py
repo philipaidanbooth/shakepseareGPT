@@ -68,7 +68,15 @@ class AnswerResponse(BaseModel):
 def search_shakespeare(query: str, k: int = 10, filters: Optional[Dict] = None):
     """Search Shakespeare scenes using semantic similarity."""
     try:
+        # Validate inputs
+        if not query or not query.strip():
+            raise HTTPException(status_code=400, detail="Query cannot be empty")
+        
+        if k <= 0 or k > 50:
+            raise HTTPException(status_code=400, detail="k must be between 1 and 50")
+        
         # Create embedding for the query
+        print(f"🔍 Creating embedding for query: {query[:100]}...")
         response = openai_client.embeddings.create(
             input=query,
             model="text-embedding-3-small"
@@ -78,6 +86,7 @@ def search_shakespeare(query: str, k: int = 10, filters: Optional[Dict] = None):
         # Build where clause for filters
         where_clause = None
         if filters:
+            print(f"🔍 Applying filters: {filters}")
             where_conditions = []
             for key, value in filters.items():
                 if key in ['play', 'act', 'scene_number', 'characters']:
@@ -86,6 +95,7 @@ def search_shakespeare(query: str, k: int = 10, filters: Optional[Dict] = None):
                 where_clause = {"$and": where_conditions}
         
         # Search the collection
+        print(f"🔍 Searching ChromaDB with k={k}...")
         results = collection.query(
             query_embeddings=[query_embedding],
             n_results=k,
@@ -102,21 +112,33 @@ def search_shakespeare(query: str, k: int = 10, filters: Optional[Dict] = None):
                 'distance': results['distances'][0][i]
             })
         
+        print(f"✅ Found {len(formatted_results)} results")
         return formatted_results
     
     except Exception as e:
+        print(f"❌ Search error: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Search error: {str(e)}")
 
 def answer_with_shakespeare_context(question: str, k: int = 3, filters: Optional[Dict] = None):
-    """Answer a question using Shakespeare context."""
+    """Answer a question using Shakespeare context with optional filters."""
     try:
-        # Retrieve relevant Shakespeare chunks
+        # Validate inputs
+        if not question or not question.strip():
+            raise HTTPException(status_code=400, detail="Question cannot be empty")
+        
+        if k <= 0 or k > 20:
+            raise HTTPException(status_code=400, detail="k must be between 1 and 20")
+        
+        # Step 1: Retrieve relevant Shakespeare chunks
+        print(f"🔍 Searching Shakespeare database for: {question[:100]}...")
+        if filters:
+            print(f"🔍 Applying filters: {filters}")
         results = search_shakespeare(question, k=k, filters=filters)
         
         if not results:
             return "I couldn't find relevant Shakespeare content to answer your question.", []
         
-        # Build context from retrieved chunks
+        # Step 2: Build context from retrieved chunks
         context_parts = []
         for i, result in enumerate(results, 1):
             metadata = result['metadata']
@@ -131,22 +153,23 @@ Content: {result['content']}
         
         context = "\n".join(context_parts)
         
-        # Create prompt with context
+        # Step 3: Create prompt with context
         prompt = f"""You are a well-read, insightful Shakespeare guide—a scholar and storyteller who can explain the Bard's works to students, readers, and performers alike.
 
-Below is a passage or excerpt from Shakespeare. Use it to thoughtfully respond to the user's question.
+            Below is a passage or excerpt from Shakespeare. Use it to thoughtfully respond to the user's question.
 
-CONTEXT:
-{context}
+            CONTEXT:
+            {context}
 
-QUESTION:
-{question}
+            QUESTION:
+            {question}
 
-Please provide a thoughtful, well-supported response based on the context above. Feel free to cite specific characters, scenes, or quotes when relevant. If the passage doesn't fully answer the question, acknowledge that and share whatever insight you can based on the given lines. Aim for clarity, depth, and a touch of literary flair where appropriate.
+            Please provide a thoughtful, well-supported response based on the context above. Feel free to cite specific characters, scenes, or quotes when relevant. If the passage doesn't fully answer the question, acknowledge that and share whatever insight you can based on the given lines. Aim for clarity, depth, and a touch of literary flair where appropriate.
 
-RESPONSE:"""
+            RESPONSE:"""
 
-        # Generate answer using OpenAI
+        # Step 4: Generate answer using OpenAI
+        print("🤖 Generating answer with OpenAI...")
         response = openai_client.chat.completions.create(
             model="gpt-3.5-turbo",
             messages=[
@@ -158,8 +181,9 @@ RESPONSE:"""
         )
         
         answer = response.choices[0].message.content
+        print("✅ Answer generated successfully")
         
-        # Format sources
+        # Step 5: Return answer with sources
         sources = []
         for i, result in enumerate(results, 1):
             metadata = result['metadata']
@@ -175,6 +199,7 @@ RESPONSE:"""
         return answer, sources
         
     except Exception as e:
+        print(f"❌ Answer generation error: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Answer generation error: {str(e)}")
 
 # API endpoints
@@ -191,6 +216,49 @@ async def root():
             "characters": "/characters"
         }
     }
+
+@app.get("/health")
+async def health_check():
+    """Comprehensive health check for all services."""
+    health_status = {
+        "status": "healthy",
+        "timestamp": "2024-01-01T00:00:00Z",
+        "services": {}
+    }
+    
+    # Test OpenAI connection
+    try:
+        test_response = openai_client.embeddings.create(
+            input="test",
+            model="text-embedding-3-small"
+        )
+        health_status["services"]["openai"] = "healthy"
+    except Exception as e:
+        health_status["services"]["openai"] = f"error: {str(e)}"
+        health_status["status"] = "unhealthy"
+    
+    # Test ChromaDB connection
+    try:
+        test_results = collection.get(limit=1)
+        health_status["services"]["chromadb"] = "healthy"
+    except Exception as e:
+        health_status["services"]["chromadb"] = f"error: {str(e)}"
+        health_status["status"] = "unhealthy"
+    
+    # Check environment variables
+    env_vars = {}
+    required_vars = ["OPENAI_API_KEY", "CHROMA_API_KEY", "CHROMA_TENANT_ID", "CHROMA_DB_NAME"]
+    for var in required_vars:
+        value = os.getenv(var)
+        if value:
+            env_vars[var] = "set"
+        else:
+            env_vars[var] = "missing"
+            health_status["status"] = "unhealthy"
+    
+    health_status["environment"] = env_vars
+    
+    return health_status
 
 @app.post("/search", response_model=List[SearchResult])
 async def search_endpoint(request: SearchRequest):

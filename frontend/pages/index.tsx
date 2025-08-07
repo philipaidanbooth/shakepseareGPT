@@ -91,7 +91,7 @@ export default function Home() {
     try {
       const requestPayload: any = {
         question: question,
-        k: 5 // Now requests 5 chunks
+        k: 5 // Request 5 chunks for better context
       };
 
       // Add play filter if a play is selected
@@ -106,7 +106,17 @@ export default function Home() {
       setAnswer(data.answer);
       setSources(data.sources);
     } catch (err: any) {
-      setError(err.response?.data?.detail || 'An error occurred while processing your question.');
+      console.error('API Error:', err);
+      if (err.response) {
+        // Server responded with error status
+        setError(`Server Error: ${err.response.data?.detail || err.response.statusText}`);
+      } else if (err.request) {
+        // Network error
+        setError('Network Error: Unable to connect to the server. Please check your internet connection.');
+      } else {
+        // Other error
+        setError(`Error: ${err.message || 'An unexpected error occurred.'}`);
+      }
     } finally {
       setLoading(false);
     }
